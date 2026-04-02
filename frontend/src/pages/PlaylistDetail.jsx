@@ -4,8 +4,9 @@ import axios from '../axiosConfig';
 import VideoItem from '../components/VideoItem';
 import AddVideoModal from '../components/AddVideoModal';
 import PlaylistModal from '../components/PlaylistModal';
+import Toast from '../components/Toast';
 
-const PlaylistDetail = () => {
+const PlaylistDetail = ({ searchQuery }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [playlist, setPlaylist] = useState(null);
@@ -14,6 +15,9 @@ const PlaylistDetail = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => setToast({ message, type });
 
   const fetchPlaylist = async () => {
     try {
@@ -40,7 +44,7 @@ const PlaylistDetail = () => {
       await axios.delete(`/api/playlists/${id}`);
       navigate('/dashboard');
     } catch (err) {
-      console.error(err);
+      showToast('Failed to delete playlist', 'error');
     }
   };
 
@@ -49,8 +53,9 @@ const PlaylistDetail = () => {
     try {
       await axios.delete(`/api/playlists/${id}/videos/${videoId}`);
       setItems((prev) => prev.filter((item) => item.video._id !== videoId));
+      showToast('Video removed');
     } catch (err) {
-      console.error(err);
+      showToast('Failed to remove video', 'error');
     }
   };
 
@@ -62,6 +67,7 @@ const PlaylistDetail = () => {
     await axios.patch(`/api/playlists/${id}/reorder`, {
       orderedIds: newItems.map((i) => i._id),
     });
+    showToast('Order updated', 'info');
   };
 
   const handleMoveDown = async (index) => {
@@ -72,11 +78,13 @@ const PlaylistDetail = () => {
     await axios.patch(`/api/playlists/${id}/reorder`, {
       orderedIds: newItems.map((i) => i._id),
     });
+    showToast('Order updated', 'info');
   };
 
   const handleVideoAdded = (newItem) => {
     setItems((prev) => [...prev, newItem]);
     setShowAddModal(false);
+    showToast('Video added successfully');
   };
 
   const handleVideoEdited = (updatedVideo) => {
@@ -86,69 +94,72 @@ const PlaylistDetail = () => {
       )
     );
     setEditingItem(null);
+    showToast('Video updated successfully');
   };
 
   const handlePlaylistSaved = (updated) => {
     setPlaylist(updated);
     setShowEditModal(false);
+    showToast('Playlist updated successfully');
   };
 
-  if (loading) return <div className="min-h-screen bg-gray-900 text-white p-6">Loading...</div>;
-  if (!playlist) return <div className="min-h-screen bg-gray-900 text-white p-6">Playlist not found.</div>;
+  const filteredItems = items.filter((item) =>
+    item.video.title.toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (item.video.category && item.video.category.toLowerCase().includes((searchQuery || '').toLowerCase()))
+  );
+
+  if (loading)
+    return (
+      <div className="min-h-screen bg-cover bg-center text-white p-6" style={{ backgroundImage: "url('/background.png')" }}>
+        <div className="min-h-screen bg-black/60 p-6">Loading...</div>
+      </div>
+    );
+
+  if (!playlist)
+    return (
+      <div className="min-h-screen bg-cover bg-center text-white p-6" style={{ backgroundImage: "url('/background.png')" }}>
+        <div className="min-h-screen bg-black/60 p-6">Playlist not found.</div>
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
-      <div className="max-w-4xl mx-auto">
-
-        {/* Playlist header */}
+    <div
+      className="min-h-screen bg-cover bg-center text-white"
+      style={{ backgroundImage: "url('/background.png')" }}
+    >
+      <div className="min-h-screen bg-black/60 p-6">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="text-gray-400 text-sm mb-2 hover:text-white"
-            >
+            <button onClick={() => navigate('/dashboard')} className="text-gray-400 text-sm mb-2 hover:text-white">
               ← Back
             </button>
             <h1 className="text-2xl font-semibold">{playlist.title}</h1>
-            {playlist.description && (
-              <p className="text-gray-400 mt-1">{playlist.description}</p>
-            )}
+            {playlist.description && <p className="text-gray-400 mt-1">{playlist.description}</p>}
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm"
-            >
+            <button onClick={() => setShowEditModal(true)} className="bg-gray-700 px-3 py-2 rounded text-sm">
               Edit
             </button>
-            <button
-              onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm"
-            >
+            <button onClick={handleDelete} className="bg-red-600 px-3 py-2 rounded text-sm">
               Delete
             </button>
           </div>
         </div>
 
-        {/* Add video button */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-6">
           <p className="text-gray-400 text-sm">
             {items.length} video{items.length !== 1 ? 's' : ''}
           </p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-cyan-500 hover:bg-cyan-600 px-4 py-2 rounded text-sm"
-          >
+          <button onClick={() => setShowAddModal(true)} className="bg-cyan-500 px-4 py-2 rounded text-sm">
             + Add Video
           </button>
         </div>
 
-        {/* Video list */}
-        {items.length === 0 ? (
-          <p className="text-gray-400">No videos yet. Add one to get started!</p>
+        {filteredItems.length === 0 ? (
+          <p className="text-gray-400">No videos found.</p>
         ) : (
-          <div className="space-y-3">
-            {items.map((item, index) => (
+          <div className="grid grid-cols-2 gap-4">
+            {filteredItems.map((item, index) => (
               <VideoItem
                 key={item._id}
                 item={item}
@@ -157,33 +168,31 @@ const PlaylistDetail = () => {
                 onEdit={() => setEditingItem(item)}
                 onMoveUp={() => handleMoveUp(index)}
                 onMoveDown={() => handleMoveDown(index)}
-                isFirst={index === 0}
-                isLast={index === items.length - 1}
               />
             ))}
           </div>
         )}
+
+        {(showAddModal || editingItem) && (
+          <AddVideoModal
+            playlistId={id}
+            onAdded={handleVideoAdded}
+            onClose={() => { setShowAddModal(false); setEditingItem(null); }}
+            editingItem={editingItem}
+            onEdited={handleVideoEdited}
+          />
+        )}
+
+        {showEditModal && (
+          <PlaylistModal
+            playlist={playlist}
+            onSave={handlePlaylistSaved}
+            onClose={() => setShowEditModal(false)}
+          />
+        )}
+
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </div>
-
-      {/* Add or Edit video modal */}
-      {(showAddModal || editingItem) && (
-        <AddVideoModal
-          playlistId={id}
-          onAdded={handleVideoAdded}
-          onClose={() => { setShowAddModal(false); setEditingItem(null); }}
-          editingItem={editingItem}
-          onEdited={handleVideoEdited}
-        />
-      )}
-
-      {/* Edit playlist modal */}
-      {showEditModal && (
-        <PlaylistModal
-          playlist={playlist}
-          onSave={handlePlaylistSaved}
-          onClose={() => setShowEditModal(false)}
-        />
-      )}
     </div>
   );
 };
