@@ -11,7 +11,7 @@ const getPlaylists = async (req, res) => {
       playlists.map(async (pl) => {
         const count = await PlaylistItem.countDocuments({ playlist: pl._id });
         return { ...pl.toObject(), videoCount: count };
-      })
+      }) 
     );
 
     res.json(playlistsWithCount);
