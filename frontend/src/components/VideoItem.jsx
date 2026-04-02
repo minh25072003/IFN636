@@ -24,16 +24,27 @@ const VideoItem = ({ item, index, onRemove, onEdit, onMoveUp, onMoveDown, isFirs
         )}
       </div>
 
-      {/* Title and duration */}
+      {/* Info Section: Title, URL, and Category */}
       <div className="flex-1 min-w-0">
         <p className="text-white text-base font-medium truncate">{video.title}</p>
 
-        {video.duration && (
-          <p className="text-green-200 text-xs mt-1">{video.duration}</p>
-        )}
+        {/* Video URL */}
+        <p className="text-blue-300 text-xs mt-1 truncate">
+          <a 
+            href={video.url} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="hover:underline"
+          >
+            {video.url}
+          </a>
+        </p>
 
+        {/* Category */}
         {video.category && (
-          <span className="text-xs text-green-300 mt-1 block">{video.category}</span>
+          <span className="text-xs text-green-300 mt-1 block font-light italic">
+            {video.category}
+          </span>
         )}
       </div>
 
@@ -55,21 +66,22 @@ const VideoItem = ({ item, index, onRemove, onEdit, onMoveUp, onMoveDown, isFirs
         </button>
       </div>
 
-      {/* Edit button */}
-      <button
-        onClick={onEdit}
-        className="text-yellow-300 hover:text-yellow-200 text-sm"
-      >
-        Edit
-      </button>
+      {/* Actions */}
+      <div className="flex gap-3 ml-2">
+        <button
+          onClick={onEdit}
+          className="text-yellow-300 hover:text-yellow-200 text-sm"
+        >
+          Edit
+        </button>
 
-      {/* Remove button */}
-      <button
-        onClick={onRemove}
-        className="text-red-400 hover:text-red-300 text-sm"
-      >
-        Remove
-      </button>
+        <button
+          onClick={onRemove}
+          className="text-red-400 hover:text-red-300 text-sm"
+        >
+          Remove
+        </button>
+      </div>
     </div>
   );
 };
